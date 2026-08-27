@@ -303,6 +303,9 @@
     .qty-btn{width:32px; height:32px; font-size:13px;}
   }
 </style>
+<!-- Firebase Realtime Database（データの保存・共有に使用） -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -427,6 +430,24 @@
 </div>
 
 <script>
+// ============================================================
+// Firebase 設定（★ここをご自身のFirebaseプロジェクトの値に書き換えてください）
+// Firebaseコンソール → プロジェクトの設定 → 全般 → 「マイアプリ」の
+// SDK構成にある値をそのままコピーしてください。
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyBCZc-KQeQwOTFMCFqv3qewZvRGAqxYPAo",
+  authDomain: "toin3f2026.firebaseapp.com",
+  databaseURL: "https://toin3f2026-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "toin3f2026",
+  storageBucket: "toin3f2026.firebasestorage.app",
+  messagingSenderId: "102451971100",
+  appId: "1:102451971100:web:fe113142e6e3d8db710bd9",
+  measurementId: "G-Q8QXBE41FW"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
 const MENU = [
   {key:'meat',  name:'ミートソースパスタ', price:150},
   {key:'carb',  name:'カルボナーラパスタ', price:150},
@@ -498,15 +519,17 @@ const App = {
     }
   },
 
-  // ---------- storage helpers ----------
+  // ---------- storage helpers (Firebase Realtime Database) ----------
+  // 保存の仕組みだけをFirebaseに差し替えています。呼び出し側のコードは変更していません。
   async storageGet(key){
     try{
-      const r = await window.storage.get(key, true);
-      return r ? JSON.parse(r.value) : null;
-    }catch(e){ return null; }
+      const snap = await db.ref(key).once('value');
+      const val = snap.val();
+      return (val===null || val===undefined) ? null : val;
+    }catch(e){ console.error('firebase get failed', e); return null; }
   },
   async storageSet(key, value){
-    try{ await window.storage.set(key, JSON.stringify(value), true); }catch(e){ console.error('storage set failed', e); }
+    try{ await db.ref(key).set(value); }catch(e){ console.error('firebase set failed', e); }
   },
 
   async loadSheetsFromStorage(){
